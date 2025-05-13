@@ -31,3 +31,26 @@ function startTimer() {
 function stopTimer() {
     clearInterval(timer);
 }
+
+
+
+
+
+
+
+
+
+// flip card
+function flipCard({target: clickedCard}) {
+    if(cardOne !== clickedCard && !disableDeck) {
+        clickedCard.classList.add("flip");
+        if(!cardOne) {
+            return cardOne = clickedCard;
+        }
+        cardTwo = clickedCard;
+        disableDeck = true;
+        let cardOneImg = cardOne.querySelector(".back-view img").src,
+        cardTwoImg = cardTwo.querySelector(".back-view img").src;
+        matchCards(cardOneImg, cardTwoImg);
+    }
+}
