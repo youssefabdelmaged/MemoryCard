@@ -11,14 +11,13 @@ const messageElement = document.getElementById("message");
 const TIME_LIMIT = 120;
 
 //start timer
-
 function startTimer() {
     time = TIME_LIMIT;
     messageElement.style.display = "none";
-    timerElement.textContent = Time: ${time}s;
+    timerElement.textContent = `Time: ${time}s`;
     timer = setInterval(() => {
         time--;
-        timerElement.textContent = Time: ${time}s;
+        timerElement.textContent = `Time: ${time}s`;
         if (time <= 0) {
             clearInterval(timer);
             disableDeck = true;
@@ -27,9 +26,11 @@ function startTimer() {
         }
     }, 1000);
 }
-
 // stop timer
 
 function stopTimer() {
     clearInterval(timer);
 }
+
+
+
