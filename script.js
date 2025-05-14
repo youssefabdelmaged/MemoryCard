@@ -63,6 +63,12 @@ function flipCard({ target: clickedCard }) {
 
 function matchCards(img1, img2) {
   if (img1 === img2) {
+    // Play correct match sound
+    const correctSound = document.getElementById('correct-sound');
+    if (correctSound) {
+      correctSound.currentTime = 0;
+      correctSound.play();
+    }
     matched++;
     if (matched == difficulties[currentDifficulty].pairs) {
       stopTimer();
@@ -77,10 +83,16 @@ function matchCards(img1, img2) {
     cardOne = cardTwo = "";
     return (disableDeck = false);
   }
+  // Play wrong selection sound
+  const wrongSound = document.getElementById('wrong-sound');
+  if (wrongSound) {
+    wrongSound.currentTime = 0;
+    wrongSound.play();
+  }
   setTimeout(() => {
     cardOne.classList.add("shake");
     cardTwo.classList.add("shake");
-  }, 400);
+  }, 200);
 
   setTimeout(() => {
     cardOne.classList.remove("shake", "flip");
@@ -100,7 +112,7 @@ function shuffleCard(difficulty) {
   messageElement.style.display = "none";
 
   const pairs = difficulties[difficulty].pairs;
-  const totalCards = pairs * 2;
+  const totalCards = pairs * pairs;
 
   // Create array of pairs
   let arr = [];
