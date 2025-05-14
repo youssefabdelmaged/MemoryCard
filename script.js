@@ -1,8 +1,8 @@
 // Difficulty settings
 const difficulties = {
-  easy: { pairs: 4, timeLimit: 180 },
+  easy: { pairs: 8, timeLimit: 180 },
   medium: { pairs: 8, timeLimit: 120 },
-  hard: { pairs: 12, timeLimit: 90 },
+  hard: { pairs: 8, timeLimit: 90 },
 };
 
 let currentDifficulty = "medium";
@@ -64,7 +64,7 @@ function flipCard({ target: clickedCard }) {
 function matchCards(img1, img2) {
   if (img1 === img2) {
     // Play correct match sound
-    const correctSound = document.getElementById('correct-sound');
+    const correctSound = document.getElementById("correct-sound");
     if (correctSound) {
       correctSound.currentTime = 0;
       correctSound.play();
@@ -84,7 +84,7 @@ function matchCards(img1, img2) {
     return (disableDeck = false);
   }
   // Play wrong selection sound
-  const wrongSound = document.getElementById('wrong-sound');
+  const wrongSound = document.getElementById("wrong-sound");
   if (wrongSound) {
     wrongSound.currentTime = 0;
     wrongSound.play();
@@ -112,7 +112,8 @@ function shuffleCard(difficulty) {
   messageElement.style.display = "none";
 
   const pairs = difficulties[difficulty].pairs;
-  const totalCards = pairs * pairs;
+
+  const totalCards = pairs * 2;
 
   // Create array of pairs
   let arr = [];
@@ -120,8 +121,58 @@ function shuffleCard(difficulty) {
     arr.push(i);
     arr.push(i);
   }
-  // Shuffle array
-  arr.sort(() => (Math.random() > 0.5 ? 1 : -1));
+
+  // Shuffle array based on difficulty
+  function easyShuffle(array) {
+    // Arrange pairs in adjacent order for easy matching
+    let index = 0;
+    for (let i = 1; i <= array.length / 2; i++) {
+      array[index++] = i;
+      array[index++] = i;
+    }
+  }
+
+  function mediumShuffle(array) {
+    // Arrange pairs diagonally opposite on a 4x4 grid (for 8 pairs)
+    const size = 4; // grid size 4x4
+    let grid = new Array(size).fill(null).map(() => new Array(size).fill(null));
+    let pairNum = 1;
+    for (let i = 0; i < size / 2; i++) {
+      for (let j = 0; j < size; j++) {
+        if (pairNum > array.length / 2) break;
+        grid[i][j] = pairNum;
+        grid[size - 1 - i][size - 1 - j] = pairNum;
+        pairNum++;
+      }
+    }
+    // Flatten grid back to array
+    let idx = 0;
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        array[idx++] = grid[r][c];
+      }
+    }
+  }
+
+  function preHardShuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function hardShuffle(array) {
+    preHardShuffle(array);
+    preHardShuffle(array);
+  }
+
+  if (difficulty === "easy") {
+    easyShuffle(arr);
+  } else if (difficulty === "medium") {
+    mediumShuffle(arr);
+  } else if (difficulty === "hard") {
+    hardShuffle(arr);
+  }
 
   // Show/hide cards based on difficulty
   cards.forEach((card, i) => {
@@ -168,5 +219,5 @@ cards.forEach((card) => {
   card.addEventListener("click", flipCard);
 });
 
-const mainMenu = document.querySelector(".mc-game-menu")
-const mainGame = document.querySelector(".wrapper")
+const mainMenu = document.querySelector(".mc-game-menu");
+const mainGame = document.querySelector(".wrapper");
