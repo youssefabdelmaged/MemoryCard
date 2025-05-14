@@ -167,3 +167,6 @@ updateDifficultyButtonStyles(currentDifficulty);
 cards.forEach((card) => {
   card.addEventListener("click", flipCard);
 });
+
+const mainMenu = document.querySelector(".mc-game-menu")
+const mainGame = document.querySelector(".wrapper")
