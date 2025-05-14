@@ -6,6 +6,12 @@ const difficulties = {
 };
 
 let currentDifficulty = "medium";
+let playerName = "";
+let matched = 0;
+let cardOne, cardTwo;
+let disableDeck = false;
+let timer;
+let time = 0;
 
 const difficultyButtons = {
   easy: document.getElementById("easy-btn"),
@@ -14,16 +20,16 @@ const difficultyButtons = {
 };
 
 const cards = document.querySelectorAll(".card");
-let matched = 0;
-let cardOne, cardTwo;
-let disableDeck = false;
-
-let timer;
-let time = 0;
 const timerElement = document.getElementById("timer");
 const messageElement = document.getElementById("message");
+const startButton = document.getElementById("start-button");
+const nameInput = document.getElementById("name-input");
+const difficultySelect = document.getElementById("difficulty-select");
+const mainMenu = document.querySelector(".mc-game-menu");
+const mainGame = document.querySelector(".wrapper");
+const scoreList = document.getElementById("score-list");
 
-//start timer
+// Start timer
 function startTimer(timeLimit) {
   clearInterval(timer); // Clear any existing timer before starting a new one
   time = timeLimit;
@@ -35,18 +41,17 @@ function startTimer(timeLimit) {
     if (time <= 0) {
       clearInterval(timer);
       disableDeck = true;
-      messageElement.textContent = "You lose! Time's up.";
-      messageElement.style.display = "block";
+      endGame(false); // Game lost
     }
   }, 1000);
 }
-// stop timer
 
+// Stop timer
 function stopTimer() {
   clearInterval(timer);
 }
 
-// flip card
+// Flip card
 function flipCard({ target: clickedCard }) {
   if (cardOne !== clickedCard && !disableDeck) {
     clickedCard.classList.add("flip");
@@ -72,11 +77,7 @@ function matchCards(img1, img2) {
     matched++;
     if (matched == difficulties[currentDifficulty].pairs) {
       stopTimer();
-      messageElement.textContent = "You win! Congratulations!";
-      messageElement.style.display = "block";
-      setTimeout(() => {
-        return shuffleCard(currentDifficulty);
-      }, 1000);
+      endGame(true); // Game won
     }
     cardOne.removeEventListener("click", flipCard);
     cardTwo.removeEventListener("click", flipCard);
@@ -102,7 +103,7 @@ function matchCards(img1, img2) {
   }, 1200);
 }
 
-// shuffle cards
+// Shuffle cards
 function shuffleCard(difficulty) {
   if (!difficulty) difficulty = currentDifficulty;
   currentDifficulty = difficulty;
@@ -112,7 +113,6 @@ function shuffleCard(difficulty) {
   messageElement.style.display = "none";
 
   const pairs = difficulties[difficulty].pairs;
-
   const totalCards = pairs * 2;
 
   // Create array of pairs
@@ -121,7 +121,6 @@ function shuffleCard(difficulty) {
     arr.push(i);
     arr.push(i);
   }
-
   // Shuffle array based on difficulty
   function easyShuffle(array) {
     // Arrange pairs in adjacent order for easy matching
@@ -191,33 +190,89 @@ function shuffleCard(difficulty) {
   startTimer(difficulties[difficulty].timeLimit);
 }
 
-// Difficulty button event listeners
-Object.keys(difficultyButtons).forEach((level) => {
-  difficultyButtons[level].addEventListener("click", () => {
-    shuffleCard(level);
-    updateDifficultyButtonStyles(level);
-  });
-});
+// End game
+function endGame(won) {
+  stopTimer();
+  disableDeck = true;
+  const score = won ? time * 10 : 0; 
+  messageElement.textContent = won
+    ? `You win! Congratulations, ${playerName}`
+    : `You lose! Time's up, ${playerName}.`;
+  messageElement.style.display = "block";
 
-// Update button styles to show selected difficulty
-function updateDifficultyButtonStyles(selected) {
-  Object.keys(difficultyButtons).forEach((level) => {
-    if (level === selected) {
-      difficultyButtons[level].classList.add("selected");
-    } else {
-      difficultyButtons[level].classList.remove("selected");
-    }
-  });
+  // Save score to local storage
+  saveScore(playerName, score);
+
+  // Clear user input fields
+  nameInput.value = ""; 
+  difficultySelect.value = "easy"; 
+
+  setTimeout(() => {
+    mainMenu.style.display = "flex";
+    mainGame.style.display = "none";
+    updateLeaderboard(); 
+  }, 3000);
 }
 
-// Initialize game with default difficulty
-shuffleCard(currentDifficulty);
-updateDifficultyButtonStyles(currentDifficulty);
+// Function to generate a readable unique ID
+function generateNumericId(existingIds = []) {
+  if (existingIds.length === 0) {
+    return 1;
+  }
+  
+  const maxId = Math.max(...existingIds);
+  return maxId + 1;
+}
 
-// enabling flipCard
-cards.forEach((card) => {
-  card.addEventListener("click", flipCard);
+// Save score to local storage
+function saveScore(name, score) {
+  const scores = JSON.parse(localStorage.getItem("scores")) || [];
+  const existingIds = scores.map(item => item.id).filter(id => !isNaN(id));
+  const id = generateNumericId(existingIds);
+  scores.push({ id, name, score });
+  scores.sort((a, b) => b.score - a.score);
+  localStorage.setItem("scores", JSON.stringify(scores));
+}
+
+// Update leaderboard
+function updateLeaderboard() {
+  const scores = JSON.parse(localStorage.getItem("scores")) || [];
+  scoreList.innerHTML = scores
+    .map(
+      (entry, index) =>
+        `<div>${index + 1}. ID: ${entry.id} - ${entry.name} - ${entry.score}</div>`
+    )
+    .join("");
+}
+
+  mainGame.style.display = "none";
+
+
+// Start button event listener
+startButton.addEventListener("click", () => {
+  playerName = nameInput.value.trim();
+  const selectedDifficulty = difficultySelect.value;
+
+  if (!playerName) {
+    alert("Please enter your name.");
+    return;
+  }
+
+  if (!selectedDifficulty) {
+    alert("Please select a difficulty.");
+    return;
+  }
+
+  Object.values(difficultyButtons).forEach(button => {
+    button.style.display = "none";
+  });
+
+  mainMenu.style.display = "none";  
+  mainGame.style.display = "block";
+
+  shuffleCard(selectedDifficulty);
 });
 
-const mainMenu = document.querySelector(".mc-game-menu");
-const mainGame = document.querySelector(".wrapper");
+
+    updateLeaderboard(); 
+    
