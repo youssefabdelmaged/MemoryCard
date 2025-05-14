@@ -13,12 +13,7 @@ let disableDeck = false;
 let timer;
 let time = 0;
 
-const difficultyButtons = {
-  easy: document.getElementById("easy-btn"),
-  medium: document.getElementById("medium-btn"),
-  hard: document.getElementById("hard-btn"),
-};
-
+// DOM elements
 const cards = document.querySelectorAll(".card");
 const timerElement = document.getElementById("timer");
 const messageElement = document.getElementById("message");
@@ -194,23 +189,45 @@ function shuffleCard(difficulty) {
 function endGame(won) {
   stopTimer();
   disableDeck = true;
-  const score = won ? time * 10 : 0; 
+  const score = won ? time * 10 : 0;
+
+  // Prepare message element for smooth fade-in and grow
+  messageElement.style.opacity = 0;
+  messageElement.style.maxHeight = "10px";
+  messageElement.style.maxWidth = "390px";
+  messageElement.style.overflow = "hidden";
+  messageElement.style.display = "flex";
+  messageElement.style.whiteSpace = "normal";
+  messageElement.style.transition = "opacity 1.5s ease, max-height 1.5s ease";
+
+  // Set message text
   messageElement.textContent = won
     ? `You win! Congratulations, ${playerName}`
     : `You lose! Time's up, ${playerName}.`;
-  messageElement.style.display = "block";
+
+  // Trigger fade-in and grow
+  setTimeout(() => {
+    messageElement.style.opacity = 1;
+    messageElement.style.maxHeight = "300px";
+  }, 50);
 
   // Save score to local storage
   saveScore(playerName, score);
 
   // Clear user input fields
-  nameInput.value = ""; 
-  difficultySelect.value = "easy"; 
+  nameInput.value = "";
+  difficultySelect.value = "easy";
 
   setTimeout(() => {
-    mainMenu.style.display = "flex";
-    mainGame.style.display = "none";
-    updateLeaderboard(); 
+    // Fade out and shrink message before hiding game
+    messageElement.style.opacity = 0;
+    messageElement.style.maxHeight = "0px";
+    setTimeout(() => {
+      mainMenu.style.display = "flex";
+      mainGame.style.display = "none";
+      messageElement.style.display = "none";
+      updateLeaderboard();
+    }, 1500);
   }, 3000);
 }
 
@@ -219,7 +236,7 @@ function generateNumericId(existingIds = []) {
   if (existingIds.length === 0) {
     return 1;
   }
-  
+
   const maxId = Math.max(...existingIds);
   return maxId + 1;
 }
@@ -227,7 +244,7 @@ function generateNumericId(existingIds = []) {
 // Save score to local storage
 function saveScore(name, score) {
   const scores = JSON.parse(localStorage.getItem("scores")) || [];
-  const existingIds = scores.map(item => item.id).filter(id => !isNaN(id));
+  const existingIds = scores.map((item) => item.id).filter((id) => !isNaN(id));
   const id = generateNumericId(existingIds);
   scores.push({ id, name, score });
   scores.sort((a, b) => b.score - a.score);
@@ -238,15 +255,11 @@ function saveScore(name, score) {
 function updateLeaderboard() {
   const scores = JSON.parse(localStorage.getItem("scores")) || [];
   scoreList.innerHTML = scores
-    .map(
-      (entry, index) =>
-        `<div>${index + 1}. ID: ${entry.id} - ${entry.name} - ${entry.score}</div>`
-    )
+    .map((entry) => `<div>  ${entry.name} - ${entry.score}</div>`)
     .join("");
 }
 
-  mainGame.style.display = "none";
-
+mainGame.style.display = "none";
 
 // Start button event listener
 startButton.addEventListener("click", () => {
@@ -263,16 +276,10 @@ startButton.addEventListener("click", () => {
     return;
   }
 
-  Object.values(difficultyButtons).forEach(button => {
-    button.style.display = "none";
-  });
-
-  mainMenu.style.display = "none";  
+  mainMenu.style.display = "none";
   mainGame.style.display = "block";
 
   shuffleCard(selectedDifficulty);
 });
 
-
-    updateLeaderboard(); 
-    
+updateLeaderboard();
