@@ -189,7 +189,7 @@ function shuffleCard(difficulty) {
 function endGame(won) {
   stopTimer();
   disableDeck = true;
-  const score = won ? time * 10 : 0;
+const score = won ? time * matched : matched * 10;
 
   // Prepare message element for smooth fade-in and grow
   messageElement.style.opacity = 0;
