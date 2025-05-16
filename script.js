@@ -8,11 +8,12 @@ const difficulties = {
 let currentDifficulty = "medium";
 let playerName = "";
 let matched = 0;
-let flippedCount = 0; // Track number of cards flipped
+let flippedCount = 0;
 let cardOne, cardTwo;
 let disableDeck = false;
 let timer;
 let time = 0;
+let attempts = 0; // ✅ New: Track number of attempts
 
 // DOM elements
 const cards = document.querySelectorAll(".card");
@@ -24,10 +25,12 @@ const difficultySelect = document.getElementById("difficulty-select");
 const mainMenu = document.querySelector(".mc-game-menu");
 const mainGame = document.querySelector(".wrapper");
 const scoreList = document.getElementById("score-list");
+const attemptsElement = document.getElementById("attempts"); // ✅ New
+const restartButton = document.getElementById("restart-button"); // ✅ New
 
 // Start timer
 function startTimer(timeLimit) {
-  clearInterval(timer); // Clear any existing timer before starting a new one
+  clearInterval(timer);
   time = timeLimit;
   messageElement.style.display = "none";
   timerElement.textContent = `Time: ${time}s`;
@@ -37,7 +40,7 @@ function startTimer(timeLimit) {
     if (time <= 0) {
       clearInterval(timer);
       disableDeck = true;
-      endGame(false); // Game lost
+      endGame(false);
     }
   }, 1000);
 }
@@ -50,43 +53,51 @@ function stopTimer() {
 // Flip card
 function flipCard({ target: clickedCard }) {
   if (cardOne !== clickedCard && !disableDeck) {
-    flippedCount++; // Increment flipped cards count on each flip
+    flippedCount++;
     clickedCard.classList.add("flip");
+
     if (!cardOne) {
       return (cardOne = clickedCard);
     }
+
     cardTwo = clickedCard;
     disableDeck = true;
+
+    // ✅ Update attempts
+    attempts++;
+    attemptsElement.textContent = `Attempts: ${attempts}`;
+
     let cardOneImg = cardOne.querySelector(".back-view img").src,
       cardTwoImg = cardTwo.querySelector(".back-view img").src;
+
     matchCards(cardOneImg, cardTwoImg);
   }
 }
 
 function matchCards(img1, img2) {
   if (img1 === img2) {
-    // Play correct match sound
     const correctSound = document.getElementById("correct-sound");
     if (correctSound) {
       correctSound.currentTime = 0;
       correctSound.play();
     }
     matched++;
-    if (matched == difficulties[currentDifficulty].pairs) {
+    if (matched === difficulties[currentDifficulty].pairs) {
       stopTimer();
-      endGame(true); // Game won
+      endGame(true);
     }
     cardOne.removeEventListener("click", flipCard);
     cardTwo.removeEventListener("click", flipCard);
     cardOne = cardTwo = "";
     return (disableDeck = false);
   }
-  // Play wrong selection sound
+
   const wrongSound = document.getElementById("wrong-sound");
   if (wrongSound) {
     wrongSound.currentTime = 0;
     wrongSound.play();
   }
+
   setTimeout(() => {
     cardOne.classList.add("shake");
     cardTwo.classList.add("shake");
@@ -105,7 +116,9 @@ function shuffleCard(difficulty) {
   if (!difficulty) difficulty = currentDifficulty;
   currentDifficulty = difficulty;
   matched = 0;
-  flippedCount = 0; // Reset flipped count on shuffle
+  flippedCount = 0;
+  attempts = 0; // ✅ Reset attempts
+  attemptsElement.textContent = `Attempts: 0`; // ✅ Update UI
   disableDeck = false;
   cardOne = cardTwo = "";
   messageElement.style.display = "none";
@@ -113,15 +126,12 @@ function shuffleCard(difficulty) {
   const pairs = difficulties[difficulty].pairs;
   const totalCards = pairs * 2;
 
-  // Create array of pairs
   let arr = [];
   for (let i = 1; i <= pairs; i++) {
-    arr.push(i);
-    arr.push(i);
+    arr.push(i, i);
   }
-  // Shuffle array based on difficulty
+
   function easyShuffle(array) {
-    // Arrange pairs in adjacent order for easy matching
     let index = 0;
     for (let i = 1; i <= array.length / 2; i++) {
       array[index++] = i;
@@ -130,8 +140,7 @@ function shuffleCard(difficulty) {
   }
 
   function mediumShuffle(array) {
-    // Arrange pairs diagonally opposite on a 4x4 grid (for 8 pairs)
-    const size = 4; // grid size 4x4
+    const size = 4;
     let grid = new Array(size).fill(null).map(() => new Array(size).fill(null));
     let pairNum = 1;
     for (let i = 0; i < size / 2; i++) {
@@ -142,7 +151,6 @@ function shuffleCard(difficulty) {
         pairNum++;
       }
     }
-    // Flatten grid back to array
     let idx = 0;
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
@@ -171,7 +179,6 @@ function shuffleCard(difficulty) {
     hardShuffle(arr);
   }
 
-  // Show/hide cards based on difficulty
   cards.forEach((card, i) => {
     if (i < totalCards) {
       card.style.display = "flex";
@@ -192,9 +199,8 @@ function shuffleCard(difficulty) {
 function endGame(won) {
   stopTimer();
   disableDeck = true;
-  const score = matched; // Score based on number of pairs matched correctly
+  const score = matched;
 
-  // Prepare message element for smooth fade-in and grow
   messageElement.style.opacity = 0;
   messageElement.style.maxHeight = "10px";
   messageElement.style.maxWidth = "390px";
@@ -203,26 +209,21 @@ function endGame(won) {
   messageElement.style.whiteSpace = "normal";
   messageElement.style.transition = "opacity 1.5s ease, max-height 1.5s ease";
 
-  // Set message text
   messageElement.textContent = won
     ? `You win! Congratulations, ${playerName}`
     : `You lose! Time's up, ${playerName}.`;
 
-  // Trigger fade-in and grow
   setTimeout(() => {
     messageElement.style.opacity = 1;
     messageElement.style.maxHeight = "300px";
   }, 50);
 
-  // Save score to local storage with won flag
   saveScore(playerName, score, won);
 
-  // Clear user input fields
   nameInput.value = "";
   difficultySelect.value = "easy";
 
   setTimeout(() => {
-    // Fade out and shrink message before hiding game
     messageElement.style.opacity = 0;
     messageElement.style.maxHeight = "0px";
     setTimeout(() => {
@@ -234,17 +235,14 @@ function endGame(won) {
   }, 3000);
 }
 
-// Function to generate a readable unique ID
+// Generate unique numeric ID
 function generateNumericId(existingIds = []) {
-  if (existingIds.length === 0) {
-    return 1;
-  }
-
+  if (existingIds.length === 0) return 1;
   const maxId = Math.max(...existingIds);
   return maxId + 1;
 }
 
-// Save score to local storage
+// Save score
 function saveScore(name, score, won = false) {
   const scores = JSON.parse(localStorage.getItem("scores")) || [];
   const existingIds = scores.map((item) => item.id).filter((id) => !isNaN(id));
@@ -253,6 +251,7 @@ function saveScore(name, score, won = false) {
   scores.sort((a, b) => b.score - a.score);
   localStorage.setItem("scores", JSON.stringify(scores));
 }
+
 function updateLeaderboard() {
   const scores = JSON.parse(localStorage.getItem("scores")) || [];
   scoreList.innerHTML = scores
@@ -267,7 +266,7 @@ function updateLeaderboard() {
 
 mainGame.style.display = "none";
 
-// Start button event listener
+// Start game
 startButton.addEventListener("click", () => {
   playerName = nameInput.value.trim();
   const selectedDifficulty = difficultySelect.value;
@@ -286,6 +285,11 @@ startButton.addEventListener("click", () => {
   mainGame.style.display = "block";
 
   shuffleCard(selectedDifficulty);
+});
+
+// ✅ Restart button listener
+restartButton.addEventListener("click", () => {
+  shuffleCard(currentDifficulty);
 });
 
 updateLeaderboard();
