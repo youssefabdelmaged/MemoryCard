@@ -8,6 +8,7 @@ const difficulties = {
 let currentDifficulty = "medium";
 let playerName = "";
 let matched = 0;
+let flippedCount = 0; // Track number of cards flipped
 let cardOne, cardTwo;
 let disableDeck = false;
 let timer;
@@ -49,6 +50,7 @@ function stopTimer() {
 // Flip card
 function flipCard({ target: clickedCard }) {
   if (cardOne !== clickedCard && !disableDeck) {
+    flippedCount++; // Increment flipped cards count on each flip
     clickedCard.classList.add("flip");
     if (!cardOne) {
       return (cardOne = clickedCard);
@@ -103,6 +105,7 @@ function shuffleCard(difficulty) {
   if (!difficulty) difficulty = currentDifficulty;
   currentDifficulty = difficulty;
   matched = 0;
+  flippedCount = 0; // Reset flipped count on shuffle
   disableDeck = false;
   cardOne = cardTwo = "";
   messageElement.style.display = "none";
@@ -189,7 +192,7 @@ function shuffleCard(difficulty) {
 function endGame(won) {
   stopTimer();
   disableDeck = true;
-const score = won ? time * matched : matched * 10;
+  const score = matched; // Score based on number of pairs matched correctly
 
   // Prepare message element for smooth fade-in and grow
   messageElement.style.opacity = 0;
@@ -211,8 +214,8 @@ const score = won ? time * matched : matched * 10;
     messageElement.style.maxHeight = "300px";
   }, 50);
 
-  // Save score to local storage
-  saveScore(playerName, score);
+  // Save score to local storage with won flag
+  saveScore(playerName, score, won);
 
   // Clear user input fields
   nameInput.value = "";
@@ -242,20 +245,23 @@ function generateNumericId(existingIds = []) {
 }
 
 // Save score to local storage
-function saveScore(name, score) {
+function saveScore(name, score, won = false) {
   const scores = JSON.parse(localStorage.getItem("scores")) || [];
   const existingIds = scores.map((item) => item.id).filter((id) => !isNaN(id));
   const id = generateNumericId(existingIds);
-  scores.push({ id, name, score });
+  scores.push({ id, name, score, won });
   scores.sort((a, b) => b.score - a.score);
   localStorage.setItem("scores", JSON.stringify(scores));
 }
-
-// Update leaderboard
 function updateLeaderboard() {
   const scores = JSON.parse(localStorage.getItem("scores")) || [];
   scoreList.innerHTML = scores
-    .map((entry) => `<div>  ${entry.name} - ${entry.score}</div>`)
+    .slice()
+    .reverse()
+    .map(
+      (entry) =>
+        `<div>${entry.name} - ${entry.won ? "WINNER" : entry.score}</div>`
+    )
     .join("");
 }
 
